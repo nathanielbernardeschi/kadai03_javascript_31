@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- コンテンツ表示画面 -->
+    <div class="container">
+        <div class="title">
+            <h1>test pr</h1>
+        </div>
+        <div>
+            <input type="text" id="uname" placeholder="Service">
+        </div>
+        <div class="memo">
+            <textarea id="text" cols="50" rows="5" placeholder="Memo"></textarea>
+                <div>
+                    <input type="file" id="file">
+                    <div id="preview"></div>
+                </div>           
+        </div>
+        <div> 
+            <p id="send">Send</p>
+        </div>
+        <div id="output"></div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!--Firebase-->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+
+        //追加したもの１
+        import { getDatabase, ref, push, set, onChildAdded, remove, onChildRemoved } 
+        from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyCmznZDb6OitBkM0-b_4PCrVT1EWiSFkZQ",
+          authDomain: "gsdemo-59546.firebaseapp.com",
+          projectId: "gsdemo-59546",
+          storageBucket: "gsdemo-59546.appspot.com",
+          messagingSenderId: "971697603263",
+          appId: "1:971697603263:web:e83e36068e130ea4767c0a"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+
+        //追加したもの２
+        const db = getDatabase(app); //RealtimeDBに接続
+        const dbRef = ref(db,"chat"); //RealtimeDB内の"chat"を使う
+
+        $("#send").on('click',function(){
+            // id='uname' つまり #uname 名前のところ
+            // id='text' つまり #text テキストエリアのところ
+        const text = $('#text').val();
+        const uname = $('#uname').val();
+
+        // データの塊を作成している
+        const msg = {
+        uname: $('#uname').val(),
+        text: $('#text').val(), 
+        }
+
+        //ユニークKEYを生成 = 絶対にかぶらない番号みたいなもの
+        const newPostRef = push(dbRef);
+        //"chat"にユニークKEYをつけてオブジェクトデータを登録
+        set(newPostRef, msg);
+        // alert(uname + text);　入力のチェックをしました
+        });
+
+        //受信処理
+        onChildAdded(dbRef,function(data){
+            const msg = data.val();
+            const key = data.key;   //固有の鍵はコレ
+            //console.log(key,'鍵')
+
+            let hh = `
+            <div class="message" data-key=${key}>
+                <input type="text" value=${msg.uname} class="uname"></imput>
+                <input type="text" value=${msg.text} class="text"></imput>
+                <p class="update">更新</p>
+                <p class="delete">削除</p>
+            </div>`;
+
+            //            let h = '<p>'
+            //                h += msg.uname;
+            //                h += '<br>';
+            //                h += msg.text;
+            //                h += '</p>';
+
+            $("#output").append(hh);
+        });
+
+        //削除処理
+    $(document).on('click','.delete',function(){
+        let v =$(this).parent().data().key;
+        console.log(v,'vvv')    //クリックした場所（this）にある値を取得
+
+        console.log(ref(db,'chat/'+v),"vvv")
+        remove(ref(db,'chat/'+v));  //removeは覚える
+
+        $(this).parent().remove(); //クリックして親階層のデータを削除
+    });
+
+    $(document).on('click','.update',function(){
+        let v =$(this).parent().data().key;
+
+        let nameValue = $(this).siblings('.uname').val();    //クリックした場所（this）にある値を取得
+        let textValue = $(this).siblings('.text').val();    //クリックした場所（this）にある値を取得
+        console.log(nameValue,"同じ列")
+        console.log(textValue,"同じ列")
+
+        //更新処理
+        set(ref(db,'chat/'+v),{
+        uname:nameValue,
+        text:textValue,
+        })
+    });
+    </script>
+
+</body>
+</html>
